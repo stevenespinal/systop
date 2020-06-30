@@ -59,5 +59,39 @@
         </main>
         <script src="js/tabs.js"></script>
         <script src="js/monitor.js"></script>
+        <script>
+            const {ipcRenderer} = require("electron");
+            const electron = require('electron');
+            const settingsForm = document.getElementById('settings-form');
+
+            ipcRenderer.on('settings:get', (e, data) => {
+                document.getElementById('cpu-overload').value = data.cpuOverload
+                document.getElementById('alert-frequency').value = data.alertFrequency
+            });
+
+            settingsForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const cpuOverload = document.getElementById('cpu-overload').value;
+                const alertFrequency = document.getElementById('alert-frequency').value;
+
+                ipcRenderer.send('settings:set', {
+                    cpuOverload,
+                    alertFrequency
+                });
+
+                showAlert('Settings Saved');
+                console.log(electron.remote.app.getPath('userData'));
+            });
+
+            function showAlert(msg) {
+                const alert = document.getElementById('alert');
+                alert.classList.remove('hide');
+                alert.classList.add('alert');
+                alert.innerText = msg;
+                setTimeout(() => {
+                    alert.classList.add('hide');
+                }, 3000);
+            }
+        </script>
     </body>
 </html>
