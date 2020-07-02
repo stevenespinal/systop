@@ -62,7 +62,7 @@
         <script>
             const electron = require('electron');
             const settingsForm = document.getElementById('settings-form');
-
+            const nav = document.getElementById('nav');
             ipcRenderer.on('settings:get', (e, data) => {
                 document.getElementById('cpu-overload').value = data.cpuOverload
                 document.getElementById('alert-frequency').value = data.alertFrequency
@@ -91,6 +91,10 @@
                     alert.classList.add('hide');
                 }, 3000);
             }
+
+            ipcRenderer.on('nav:toggle', () => {
+                nav.classList.toggle('hide');
+            });
         </script>
     </body>
 </html>

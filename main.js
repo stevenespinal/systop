@@ -1,7 +1,8 @@
-const {app, BrowserWindow, Menu, ipcMain, Tray} = require('electron');
+const {app, Menu, ipcMain, Tray} = require('electron');
 const log = require('electron-log');
 const {Store} = require("./Store");
 const path = require("path");
+const MainWindow = require("./MainWindow");
 // Set env
 process.env.NODE_ENV = 'development';
 
@@ -22,33 +23,24 @@ const store = new Store({
 });
 
 function createMainWindow() {
-    mainWindow = new BrowserWindow({
-        title: 'SysTop',
-        width: isDev ? 800 : 355,
-        height: 500,
-        icon: './assets/icons/icon.png',
-        resizable: isDev,
-        show: false,
-        opacity: 0.9,
-        webPreferences: {
-            nodeIntegration: true,
-        },
-    });
-
-    if (isDev) {
-        mainWindow.webContents.openDevTools();
-    }
-
-    mainWindow.loadFile('./app/index.html');
+    mainWindow = new MainWindow('./app/index.html', isDev);
 }
 
 app.on('ready', () => {
     createMainWindow();
     mainWindow.webContents.on('dom-ready', () => {
-       mainWindow.webContents.send('settings:get', store.get('settings'))
+        mainWindow.webContents.send('settings:get', store.get('settings'))
     });
     const mainMenu = Menu.buildFromTemplate(menu);
     Menu.setApplicationMenu(mainMenu);
+
+    mainWindow.on('close', (e) => {
+        if (!app.isQuitting) {
+            e.preventDefault();
+            mainWindow.hide();
+        }
+        return true;
+    })
 
     const icon = path.join(__dirname, "assets", "icons", "tray_icon.png");
     tray = new Tray(icon);
@@ -58,13 +50,35 @@ app.on('ready', () => {
         } else {
             mainWindow.show();
         }
-    })
+    });
+    tray.on('right-click', () => {
+        const contextMenu = Menu.buildFromTemplate([
+            {
+                label: 'Quit',
+                click: () => {
+                    app.isQuitting = true;
+                    app.quit();
+                }
+            }
+        ]);
+        tray.popUpContextMenu(contextMenu);
+    });
 });
 
 const menu = [
     ...(isMac ? [{role: 'appMenu'}] : []),
     {
         role: 'fileMenu',
+    }, {
+        label: 'View',
+        submenu: [
+            {
+                label: 'Toggle Navigation',
+                click: () => {
+                    mainWindow.webContents.send('nav:toggle');
+                }
+            }
+        ]
     },
     ...(isDev
         ? [
