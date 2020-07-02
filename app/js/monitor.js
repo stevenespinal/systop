@@ -3,9 +3,14 @@ const osu = require("node-os-utils");
 const cpu = osu.cpu;
 const mem = osu.mem;
 const os = osu.os;
+const {ipcRenderer} = require("electron");
+let cpuOverload;
+let alertFrequency;
 
-let cpuOverload = 10;
-let alertFrequency = 1;
+ipcRenderer.on('settings:get', (e, settings) => {
+    cpuOverload = +settings.cpuOverload;
+    alertFrequency = +settings.alertFrequency;
+})
 
 setInterval(async () => {
     const info = await cpu.usage();
